@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">DogsAppCompose</string>
+    <string name="dog_image">Dogs image</string>
+</resources>
