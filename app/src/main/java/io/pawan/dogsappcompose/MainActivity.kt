@@ -9,6 +9,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -29,10 +30,12 @@ import androidx.lifecycle.Lifecycle
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.toRoute
 import dagger.hilt.android.AndroidEntryPoint
 import io.pawan.dogsappcompose.data.ApiResponse
 import io.pawan.dogsappcompose.navigation.Screen
 import io.pawan.dogsappcompose.ui.theme.DogsAppComposeTheme
+import okhttp3.Route
 import java.util.Locale
 
 @AndroidEntryPoint
@@ -53,25 +56,27 @@ class MainActivity : ComponentActivity() {
                         topBar = { TopAppBar(title = { Text(text = stringResource(id = R.string.app_name)) }) }
                     ) { paddingValues ->
                         val mainViewModel = hiltViewModel<MainViewModel>()
-                        NavHost(navController, startDestination = Screen.Home.route) {
 
-                            composable(route = Screen.Home.route) {
+                        val navController = rememberNavController()
+
+                        NavHost(navController, startDestination = Screen.HomeScreen) {
+
+                            composable<Screen.HomeScreen> {
                                 DogsList(
                                     mainViewModel = mainViewModel
                                 ) { dogBreed ->
-                                    navController.navigate(Screen.DogInfo.createRoute(dogBreed))
+                                    navController.navigate(Screen.DogInfoScreen(dogBreed))
                                 }
                             }
 
-                            composable(route = Screen.DogInfo.route) { backStackEntry ->
-
-                                val dogBreed = backStackEntry.arguments?.getString("breed")
+                            composable<Screen.DogInfoScreen> { backStackEntry ->
+                                val dogBreed = backStackEntry.toRoute<Screen.DogInfoScreen>()
                                 requireNotNull(dogBreed) { "dogId parameter wasn't found. Please make sure it's set!" }
                                 // TODO: Fix as this is getting called on backpress as well
-                                if ( backStackEntry.maxLifecycle == Lifecycle.State.STARTED) {
-                                    mainViewModel.fetchBreedDetails(dogBreed)
-                                }
-                                DogInfo(mainViewModel, dogBreed)
+//                                if ( backStackEntry.maxLifecycle == Lifecycle.State.STARTED) {
+
+//                                }
+                                DogInfo(mainViewModel, dogBreed.breedName)
                             }
                         }
                     }

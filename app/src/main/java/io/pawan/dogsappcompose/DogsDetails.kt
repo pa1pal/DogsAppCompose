@@ -5,6 +5,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -31,12 +32,19 @@ fun DogInfo(
     mainViewModel: MainViewModel,
     breedName: String = ""
 ) {
+
+    val uiState = mainViewModel.breedDetailsState.collectAsState()
+
+    LaunchedEffect(true) {
+        mainViewModel.fetchBreedDetails(breedName)
+    }
+
     Column(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        val uiState = mainViewModel.breedDetailsState.collectAsState()
+
         var loading by remember { mutableStateOf(false) }
         val alataFontFamily = FontFamily(
             Font(R.font.alata_regular, FontWeight.Normal)

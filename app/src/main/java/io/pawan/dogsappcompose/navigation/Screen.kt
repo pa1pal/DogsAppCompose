@@ -1,8 +1,12 @@
 package io.pawan.dogsappcompose.navigation
 
-sealed class Screen(val route: String) {
-    object Home: Screen("home")
-    object DogInfo: Screen("dog/{breed}") {
-        fun createRoute(dogId: String) = "dog/$dogId"
-    }
+import kotlinx.serialization.Serializable
+
+@Serializable
+sealed class Screen {
+    @Serializable
+    data object HomeScreen: Screen()
+
+    @Serializable
+    data class DogInfoScreen(val breedName: String) : Screen()
 }
