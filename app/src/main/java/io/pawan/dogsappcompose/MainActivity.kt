@@ -88,7 +88,8 @@ class MainActivity : ComponentActivity() {
                     ) {
                         val mainViewModel = hiltViewModel<MainViewModel>()
                         val navigator = rememberListDetailPaneScaffoldNavigator<Any>()
-                        val isLandscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
+                        val isLandscape =
+                            LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
                         val isBranchValueSet by mainViewModel.branchValueSet.collectAsState()
 
                         NavigableListDetailPaneScaffold(
@@ -108,7 +109,8 @@ class MainActivity : ComponentActivity() {
                             },
                             detailPane = {
                                 if (isBranchValueSet.not()) {
-                                    val dogBreed = navigator.currentDestination?.content ?: "affenpinscher"
+                                    val dogBreed =
+                                        navigator.currentDestination?.content ?: "affenpinscher"
                                     mainViewModel.updateSelectedBreedName(dogBreed.toString())
                                     DogInfo(mainViewModel)
                                 }
@@ -134,7 +136,8 @@ class MainActivity : ComponentActivity() {
 
     override fun onStart() {
         super.onStart()
-        Branch.sessionBuilder(this).withCallback(branchReferralInitListener).withData(this.intent.data).init()
+        Branch.sessionBuilder(this).withCallback(branchReferralInitListener)
+            .withData(this.intent.data).init()
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -171,7 +174,6 @@ class MainActivity : ComponentActivity() {
 }
 
 
-
 @Composable
 fun DogsList(
     mainViewModel: MainViewModel,
@@ -206,9 +208,11 @@ fun DogsList(
             uiState.value.data?.message?.filterNotNull()?.let { list.addAll(it) }
             var selectedItem by remember { mutableStateOf<String?>(mainViewModel.selectedBreedName.value) } // Tr
             val listState = rememberLazyListState()
+            val isBranchValueSet by mainViewModel.branchValueSet.collectAsState()
 
             LaunchedEffect(selectedItem) {
-                listState.animateScrollToItem(list.indexOf(selectedItem))
+                if (isBranchValueSet)
+                    listState.animateScrollToItem(list.indexOf(selectedItem))
             }
 
             LazyColumn(
@@ -216,10 +220,11 @@ fun DogsList(
                 modifier = Modifier.fillMaxWidth(),
                 contentPadding = PaddingValues(horizontal = 2.dp, vertical = 8.dp)
             ) {
-                items(list, key = {it}) {
-                    DogsListItem(it,
+                items(list, key = { it }) {
+                    DogsListItem(
+                        it,
                         isSelected = it == selectedItem,
-                        ) { dogBreed ->
+                    ) { dogBreed ->
                         selectedItem = dogBreed
 //                        mainViewModel.updateSelectedBreedName(dogBreed)
                         showDogsDetails.invoke(dogBreed)
@@ -260,13 +265,19 @@ fun DogsListItem(
         MaterialTheme.colors.surface
     }
 
+    val elevation = if (isSelected && isLandscape) {
+        0.dp // Or any color you want for highlighting
+    } else {
+        5.dp
+    }
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .padding(4.dp)
             .wrapContentHeight(),
         shape = MaterialTheme.shapes.medium,
-        elevation = 4.dp,
+        elevation = elevation,
         backgroundColor = backgroundColor,
         onClick = { handleClick(breedName) }
     ) {
