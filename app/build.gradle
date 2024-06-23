@@ -26,11 +26,16 @@ android {
     }
 
     buildTypes {
+        debug {
+
+        }
         release {
             minifyEnabled false
+           
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
+
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
@@ -69,6 +74,7 @@ dependencies {
     implementation("androidx.compose.material3.adaptive:adaptive-navigation:1.0.0-beta03")
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.2")
     implementation 'org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.0'
+    implementation 'io.branch.sdk.android:library:5.12.1'
 
     // When using Kotlin.
     kapt 'androidx.hilt:hilt-compiler:1.2.0'

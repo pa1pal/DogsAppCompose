@@ -19,13 +19,42 @@
             android:name=".MainActivity"
             android:exported="true"
             android:label="@string/app_name"
+            android:launchMode="singleTask"
             android:theme="@style/Theme.DogsAppCompose">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+
+            <intent-filter>
+                <data android:scheme="dogsappcompose" android:host="open" />
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+            </intent-filter>
+
+<!--            <intent-filter android:autoVerify="true">-->
+<!--                <action android:name="android.intent.action.VIEW" />-->
+<!--                <category android:name="android.intent.category.DEFAULT" />-->
+<!--                <category android:name="android.intent.category.BROWSABLE" />-->
+<!--                <data android:scheme="https" android:host="23tub.app.link" />-->
+<!--                &lt;!&ndash; example-alternate domain is required for App Links when the Journeys/Web SDK and Deepviews are used inside your website.  &ndash;&gt;-->
+<!--            </intent-filter>-->
+
+            <!--             Branch App Links - Live App -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https" android:host="23tub.app.link" />
+            </intent-filter>
+
         </activity>
+
+        <meta-data android:name="io.branch.sdk.BranchKey" android:value="key_live_brgJF9R4T9yp6i7AgYZmKpmaxAnSID7P" />
+        <meta-data android:name="io.branch.sdk.BranchKey.test" android:value="key_test_oEnLv2UWU9se3fYAd4YlMcipAyeMQy12" />
+        <meta-data android:name="io.branch.sdk.TestMode" android:value="false" />
     </application>
 
 </manifest>

@@ -1,9 +1,13 @@
 package io.pawan.dogsappcompose
 
+import android.annotation.SuppressLint
+import android.content.Intent
+import android.content.res.Configuration
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
-import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
+import androidx.activity.viewModels
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -15,6 +19,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.Card
 import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.material.ExperimentalMaterialApi
@@ -29,6 +34,7 @@ import androidx.compose.material3.adaptive.navigation.BackNavigationBehavior
 import androidx.compose.material3.adaptive.navigation.NavigableListDetailPaneScaffold
 import androidx.compose.material3.adaptive.navigation.rememberListDetailPaneScaffoldNavigator
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -36,24 +42,35 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.compose.rememberNavController
 import dagger.hilt.android.AndroidEntryPoint
+import io.branch.referral.Branch
 import io.pawan.dogsappcompose.data.ApiResponse
 import io.pawan.dogsappcompose.ui.theme.DogsAppComposeTheme
+import io.pawan.dogsappcompose.utils.Constants
 import java.util.Locale
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
+    val mainViewModel: MainViewModel by viewModels()
+    var branchValueSet: Boolean = false
+
+
+    companion object {
+        private const val TAG = "MainActivity"
+    }
+
+    @SuppressLint("UnusedMaterialScaffoldPaddingParameter")
     @OptIn(ExperimentalMaterial3AdaptiveApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -68,16 +85,11 @@ class MainActivity : ComponentActivity() {
                 ) {
                     Scaffold(
                         topBar = { TopAppBar(title = { Text(text = stringResource(id = R.string.app_name)) }) }
-                    ) { paddingValues ->
+                    ) {
                         val mainViewModel = hiltViewModel<MainViewModel>()
-
-                        val navController = rememberNavController()
-
                         val navigator = rememberListDetailPaneScaffoldNavigator<Any>()
-
-                        BackHandler(navigator.canNavigateBack()) {
-                            navigator.navigateBack()
-                        }
+                        val isLandscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
+                        val isBranchValueSet by mainViewModel.branchValueSet.collectAsState()
 
                         NavigableListDetailPaneScaffold(
                             modifier = Modifier,
@@ -95,37 +107,69 @@ class MainActivity : ComponentActivity() {
                                 }
                             },
                             detailPane = {
-                                val dogBreed = navigator.currentDestination?.content ?: "affenpinscher"
-                                DogInfo(mainViewModel, dogBreed.toString())
+                                if (isBranchValueSet.not()) {
+                                    val dogBreed = navigator.currentDestination?.content ?: "affenpinscher"
+                                    mainViewModel.updateSelectedBreedName(dogBreed.toString())
+                                    DogInfo(mainViewModel)
+                                }
                             }
                         )
 
-//                        NavHost(navController, startDestination = Screen.HomeScreen) {
-//
-//                            composable<Screen.HomeScreen> {
-//                                DogsList(
-//                                    mainViewModel = mainViewModel
-//                                ) { dogBreed ->
-//                                    navController.navigate(Screen.DogInfoScreen(dogBreed))
-//                                }
-//                            }
-//
-//                            composable<Screen.DogInfoScreen> { backStackEntry ->
-//                                val dogBreed = backStackEntry.toRoute<Screen.DogInfoScreen>()
-//                                requireNotNull(dogBreed) { "dogId parameter wasn't found. Please make sure it's set!" }
-//                                // TODO: Fix as this is getting called on backpress as well
-////                                if ( backStackEntry.maxLifecycle == Lifecycle.State.STARTED) {
-//
-////                                }
-//                                DogInfo(mainViewModel, dogBreed.breedName)
-//                            }
-//                        }
+                        if (isBranchValueSet) {
+                            if (isLandscape.not()) {
+                                mainViewModel.updateBranchValue(false)
+                                Log.d(TAG, "branch value toggled : $branchValueSet ")
+                                navigator.navigateTo(
+                                    pane = ListDetailPaneScaffoldRole.Detail,
+                                    content = mainViewModel.selectedBreedName.value
+                                )
+                            }
+                        }
+
                     }
                 }
             }
         }
     }
+
+    override fun onStart() {
+        super.onStart()
+        Branch.sessionBuilder(this).withCallback(branchReferralInitListener).withData(this.intent.data).init()
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        if (intent.hasExtra("branch_force_new_session") && intent.getBooleanExtra(
+                "branch_force_new_session",
+                false
+            )
+        ) {
+            Log.i("onNewIntent", "Branch SDK reinitialized");
+            Branch.sessionBuilder(this).withCallback(branchReferralInitListener).reInit();
+        } else {
+            Log.i("onNewIntent", "Intent is null");
+        }
+    }
+
+    private val branchReferralInitListener =
+        Branch.BranchReferralInitListener { referringParams, error -> // do stuff with deep link data (nav to page, display content, etc)
+            if (error == null) {
+                Log.i("BRANCH SDK logs", referringParams.toString())
+                if (referringParams?.has(Constants.BREED_KEY) == true) {
+
+                    Log.d(TAG, "branch value set : $branchValueSet ")
+                    referringParams?.getString(Constants.BREED_KEY)
+                        ?.let { mainViewModel.updateSelectedBreedName(it) }
+
+                    mainViewModel.updateBranchValue(true)
+                }
+            } else {
+                Log.e("BRANCH SDK", error.message)
+            }
+        }
 }
+
 
 
 @Composable
@@ -135,6 +179,11 @@ fun DogsList(
 ) {
     val uiState = mainViewModel.breedList.collectAsState()
     var loading by remember { mutableStateOf(false) }
+    val defaultBreed: String = stringResource(R.string.default_breed)
+
+//    LaunchedEffect(breedName) {
+//        mainViewModel.fetchBreedDetails(breedName)
+//    }
 
     when (uiState.value) {
 
@@ -155,17 +204,29 @@ fun DogsList(
             loading = false
             val list = mutableListOf<String>()
             uiState.value.data?.message?.filterNotNull()?.let { list.addAll(it) }
+            var selectedItem by remember { mutableStateOf<String?>(mainViewModel.selectedBreedName.value) } // Tr
+            val listState = rememberLazyListState()
+
+            LaunchedEffect(selectedItem) {
+                listState.animateScrollToItem(list.indexOf(selectedItem))
+            }
 
             LazyColumn(
+                state = listState,
                 modifier = Modifier.fillMaxWidth(),
                 contentPadding = PaddingValues(horizontal = 2.dp, vertical = 8.dp)
             ) {
-                items(list) {
-                    DogsListItem(it) { dogBreed ->
+                items(list, key = {it}) {
+                    DogsListItem(it,
+                        isSelected = it == selectedItem,
+                        ) { dogBreed ->
+                        selectedItem = dogBreed
+//                        mainViewModel.updateSelectedBreedName(dogBreed)
                         showDogsDetails.invoke(dogBreed)
                     }
                 }
             }
+
         }
     }
 }
@@ -184,11 +245,20 @@ fun IndeterminateCircularIndicator(loading: Boolean) {
 @Composable
 fun DogsListItem(
     breedName: String,
+    isSelected: Boolean,
     handleClick: (String) -> Unit
 ) {
     val alataFontFamily = FontFamily(
         Font(R.font.alata_regular, FontWeight.Normal)
     )
+
+    val isLandscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
+
+    val backgroundColor = if (isSelected && isLandscape) {
+        MaterialTheme.colors.secondary // Or any color you want for highlighting
+    } else {
+        MaterialTheme.colors.surface
+    }
 
     Card(
         modifier = Modifier
@@ -197,7 +267,7 @@ fun DogsListItem(
             .wrapContentHeight(),
         shape = MaterialTheme.shapes.medium,
         elevation = 4.dp,
-        backgroundColor = MaterialTheme.colors.surface,
+        backgroundColor = backgroundColor,
         onClick = { handleClick(breedName) }
     ) {
         Text(
@@ -209,15 +279,5 @@ fun DogsListItem(
             fontFamily = alataFontFamily,
             fontSize = 22.sp
         )
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun DefaultPreview() {
-    DogsAppComposeTheme {
-        DogsListItem("Pug") {
-
-        }
     }
 }

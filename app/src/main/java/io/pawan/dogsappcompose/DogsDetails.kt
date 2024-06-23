@@ -32,14 +32,16 @@ import java.util.Locale
 
 @Composable
 fun DogInfo(
-    mainViewModel: MainViewModel,
-    breedName: String = ""
+    mainViewModel: MainViewModel
 ) {
 
     val uiState = mainViewModel.breedDetailsState.collectAsState()
+    val breedName = mainViewModel.selectedBreedName.value
 
     LaunchedEffect(breedName) {
-        mainViewModel.fetchBreedDetails(breedName)
+        if (breedName != null) {
+            mainViewModel.fetchBreedDetails(breedName)
+        }
     }
 
     Column(

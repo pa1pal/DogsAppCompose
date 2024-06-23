@@ -1,6 +1,8 @@
 package io.pawan.dogsappcompose
 
 import android.util.Log
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -28,6 +30,13 @@ class MainViewModel @Inject constructor(
     val breedDetailsState: StateFlow<ApiResponse<BreedImages>>
         get() = mutableBreedDetailsState
     private var mutableBreedDetailsState = MutableStateFlow<ApiResponse<BreedImages>>(ApiResponse.Loading(BreedImages()))
+
+    val selectedBreedName: MutableState<String>
+        get() = mutableSelectedBreedName
+    private var mutableSelectedBreedName = mutableStateOf<String>("affenpinscher")
+
+    private val _branchValueSet = MutableStateFlow(false)
+    val branchValueSet: StateFlow<Boolean> = _branchValueSet
 
     init {
         fetchBreedList()
@@ -59,6 +68,14 @@ class MainViewModel @Inject constructor(
         }
     }
 
+    fun updateSelectedBreedName(breedName: String) {
+        mutableSelectedBreedName.value = breedName
+    }
+
+    fun updateBranchValue(value: Boolean) {
+        _branchValueSet.value = value
+    }
+    
     override fun onCleared() {
         super.onCleared()
         Log.d("compose", "onclear")

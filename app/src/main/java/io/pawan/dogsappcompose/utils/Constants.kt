@@ -6,4 +6,5 @@ object Constants {
     const val CUSTOM_EVENT = "https://api2.branch.io/v2/event/custom"
     const val CUSTOM_TRACK_VIEW_EVENT = "view_dog_api"
     const val CUSTOM_TRACK_SHARE_EVENT = "share_dog_api"
+    const val BREED_KEY = "breed"
 }
